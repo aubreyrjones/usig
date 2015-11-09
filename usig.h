@@ -6,33 +6,13 @@
 #define USIG_USIG_H
 
 #include <functional>
-#include <memory>
 #include <vector>
 #include <algorithm>
 #include <mutex>
 
 namespace usig {
 
-
-template <typename FUNC, FUNC MemFun> struct member_binder;
-
-template <class CLASS, class R, typename... Params, R(CLASS::*MemFun)(Params...)>
-struct member_binder<R(CLASS::*)(Params...), MemFun> {
-	typedef R (CLASS::*MemFun_t)(Params...);
-
-	member_binder(CLASS* obj) : obj(obj) {}
-
-	R operator()(Params...args) {
-		(obj->*MemFun)(std::forward<Params>(args)...);
-	}
-
-private:
-	CLASS *obj;
-};
-
-
 typedef std::lock_guard<std::mutex> lockg;
-
 
 template<class... Args>
 class signal;
@@ -68,10 +48,10 @@ protected:
 
 public:
 
-	/// Construct a slot with the given function.
+	/// Construct a slot. The given function will be called when a connected signal is emitted.
 	slot(slot_function_t slot_function) : _slot(slot_function) {}
 
-	/// Make a copy of the slot, rebinding the function.
+	/// Make a copy of the slot, rebinding the action function.
 	slot(slot const& o, slot_function_t slot_function) : _slot(slot_function) {
 		lockg _lock(o._mutex);
 		for (signal_t *s : o.connected_signals) {
@@ -83,7 +63,10 @@ public:
 
 	~slot() { disconnect(); }
 
-	/// Call the slot action function.
+	/**
+	 * Call the slot action function. This is synchronized by the slot's mutex, meaning that the action function
+	 * will not be called simultaneously by multiple signals.
+	 * */
 	void operator()(Args... args) {
 		lockg _lock(_mutex);
 		_slot(std::forward<Args>(args)...);
@@ -95,6 +78,16 @@ public:
 		return connected_signals.end() == std::find(connected_signals.begin(), connected_signals.end(), &s);
 	}
 
+	/// Clone the connections from the other signal
+	template <class OSLOT>
+	void clone_connections(OSLOT & o) {
+		lockg _lock(o._mutex);
+
+		for (signal_t *s: o.connected_signals) {
+			s->connect(*this);
+		}
+	}
+
 	/// Disconnect this slot from all signals.
 	void disconnect() {
 		for (signal_t *s : connected_signals) {
@@ -103,15 +96,6 @@ public:
 
 		connected_signals.clear();
 	}
-};
-
-
-template <typename H, H FP> class mslot;
-
-template <typename Class, typename... Args, void (Class::*MemFunPtr) (Args...)>
-class mslot<void (Class::*) (Args...), MemFunPtr> : public slot<Args...> {
-public:
-	mslot (Class* obj) : slot<Args...>(member_binder<decltype(MemFunPtr), MemFunPtr>(obj)) {}
 };
 
 /** A synchronous signal. Calls all connected slots.*/
@@ -176,6 +160,30 @@ public:
 	}
 };
 
-}
+
+namespace util {
+template<typename FUNC, FUNC MemFun>
+struct member_binder;
+
+template<class CLASS, class R, typename... Params, R(CLASS::*MemFun)(Params...)>
+struct member_binder<R(CLASS::*)(Params...), MemFun> {
+	typedef R (CLASS::*MemFun_t)(Params...);
+
+	member_binder(CLASS *obj) : obj(obj) { }
+
+	R operator()(Params...args) {
+		(obj->*MemFun)(std::forward<Params>(args)...);
+	}
+
+private:
+	CLASS *obj;
+};
+
+
+#define MBIND(slotname, obj) ::usig::util::member_binder<decltype(slotname), slotname>(obj)
+} //namespace util
+
+
+} //namespace usig
 
 #endif //USIG_USIG_H
