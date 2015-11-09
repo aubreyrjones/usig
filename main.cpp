@@ -8,8 +8,6 @@ using namespace usig;
 
 namespace enc_ns {
 
-namespace pl = std::placeholders;
-
 struct B {
 	void _onFoo(int a) {
 		std::cout << this << " onFoo: " << a << std::endl;
@@ -25,7 +23,7 @@ public:
 	slot<int> onBar { [this](int a) { std::cout << "lambda: " << a << std::endl; } };
 
 	/// or with bind...
-	slot<int> onFoo { std::bind(&B::_onFoo, this, pl::_1) };
+	slot<int> onFoo { std::bind(&B::_onFoo, this, std::placeholders::_1) };
 
 	/// or with member function matching the signal signatures.
 	slot<int> onZoom { USIG_MBIND(&B::_onZoom, this) };
@@ -95,11 +93,11 @@ void threadTest() {
 				signal<int> s_Foo;
 				s_Foo.connect(freeSlot);
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+				std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
 				for (int i = 0; i < 400; i++) {
 					s_Foo(tid);
-					std::this_thread::sleep_for(std::chrono::milliseconds(2));
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				}
 			}
 		};

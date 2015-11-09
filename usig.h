@@ -9,7 +9,6 @@
 #include <vector>
 #include <algorithm>
 #include <mutex>
-#include <iostream>
 
 namespace usig {
 
@@ -29,8 +28,8 @@ public:
 
 protected:
 	slot_function_t const _slot; ///< Action functor.
-	std::vector<signal_t *> connected_signals; ///< Signal to which we've connected, if any.
-	std::mutex mutable _mutex;
+	std::vector<signal_t *> connected_signals {}; ///< Signal to which we've connected, if any.
+	std::mutex mutable _mutex {};
 
 	void add_signal(signal_t & s) {
 		lockg _lock(_mutex);
@@ -52,14 +51,6 @@ public:
 	/// Construct a slot. The given function will be called when a connected signal is emitted.
 	slot(slot_function_t slot_function) : _slot(slot_function) {}
 
-	/// Make a copy of the slot, rebinding the action function.
-	slot(slot const& o, slot_function_t slot_function) : _slot(slot_function) {
-		lockg _lock(o._mutex);
-		for (signal_t *s : o.connected_signals) {
-			s->connect(*this);
-		}
-	}
-
 	slot(slot const&) = delete; ///< Cannot copy slot, must rebind.
 
 	virtual ~slot() { disconnect(); }
@@ -79,9 +70,9 @@ public:
 		return connected_signals.end() != std::find(connected_signals.begin(), connected_signals.end(), &s);
 	}
 
-	/// Clone the connections from the other signal
+	/// Clone the connections from the other slot.
 	template <class OSLOT>
-	void clone_connections(OSLOT & o) {
+	void clone_connections(OSLOT const& o) {
 		lockg _lock(o._mutex);
 
 		for (signal_t *s: o.connected_signals) {
