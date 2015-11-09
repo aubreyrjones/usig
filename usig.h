@@ -13,10 +13,30 @@
 
 namespace usig {
 
+
+template <typename FUNC, FUNC MemFun> struct member_binder;
+
+template <class CLASS, class R, typename... Params, R(CLASS::*MemFun)(Params...)>
+struct member_binder<R(CLASS::*)(Params...), MemFun> {
+	typedef R (CLASS::*MemFun_t)(Params...);
+
+	member_binder(CLASS* obj) : obj(obj) {}
+
+	R operator()(Params...args) {
+		(obj->*MemFun)(std::forward<Params>(args)...);
+	}
+
+private:
+	CLASS *obj;
+};
+
+
 typedef std::lock_guard<std::mutex> lockg;
+
 
 template<class... Args>
 class signal;
+
 
 /** A slot is called when a signal is emitted. */
 template <class... Args>
@@ -86,6 +106,13 @@ public:
 };
 
 
+template <typename H, H FP> class mslot;
+
+template <typename Class, typename... Args, void (Class::*MemFunPtr) (Args...)>
+class mslot<void (Class::*) (Args...), MemFunPtr> : public slot<Args...> {
+public:
+	mslot (Class* obj) : slot<Args...>(member_binder<decltype(MemFunPtr), MemFunPtr>(obj)) {}
+};
 
 /** A synchronous signal. Calls all connected slots.*/
 template <class... Args>
