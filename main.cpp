@@ -26,7 +26,7 @@ public:
 	slot<int> onFoo { std::bind(&B::_onFoo, this, std::placeholders::_1) };
 
 	/// or with member function matching the signal signatures.
-	slot<int> onZoom { USIG_MBIND(&B::_onZoom, this) };
+	slot<int> onZoom { USIG_MBIND(&B::_onZoom, this) }; // { mbind<&B::_onZoom>(this) }; //
 
 	B() {}
 
@@ -54,6 +54,7 @@ void basicTest() {
 	}
 
 	enc_ns::B *b1 = new enc_ns::B;
+
 
 	s_Foo.connect(b1->onFoo);
 	s_Foo.connect(b1->onBar);

@@ -182,10 +182,14 @@ private:
 	CLASS *obj;
 };
 
-
 #define USIG_MBIND(slotname, obj) ::usig::util::member_binder<decltype(slotname), slotname>(obj)
 } //namespace util
 
+
+//template <typename F, F func, class C>
+//auto mbind(C * obj) -> decltype(util::member_binder<F, func>(obj)) {
+//	return util::member_binder<F, func>(obj);
+//};
 
 } //namespace usig
 
