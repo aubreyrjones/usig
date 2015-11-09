@@ -76,7 +76,7 @@ public:
 	/// Is this slot connected to the given signal?
 	bool connected_to(signal_t const& s) {
 		lockg _lock(_mutex);
-		return connected_signals.end() == std::find(connected_signals.begin(), connected_signals.end(), &s);
+		return connected_signals.end() != std::find(connected_signals.begin(), connected_signals.end(), &s);
 	}
 
 	/// Clone the connections from the other signal
@@ -107,8 +107,8 @@ public:
 	friend class slot<Args...>;
 
 protected:
-	std::vector<slot_t*> slots; ///< all connected slots.
-	std::mutex mutable _mutex;
+	std::vector<slot_t*> slots {}; ///< all connected slots.
+	std::mutex mutable _mutex {};
 
 	void do_disconnect(slot_t & s) {
 		lockg _lock(_mutex);
@@ -126,7 +126,20 @@ protected:
 public:
 
 	signal() {}
-	signal(signal& o) = delete;
+
+	signal(signal const& o) {
+		lockg _lock(o._mutex);
+		for (slot_t *s : o.slots){
+			connect(*s);
+		}
+	}
+
+	signal(signal && o) : slots(std::move(o.slots)) {
+		for (slot_t *s : slots) {
+			s->remove_signal(o);
+			s->add_signal(*this);
+		}
+	}
 
 	virtual ~signal() {
 		for (slot_t * s : slots) {
@@ -179,7 +192,7 @@ private:
 };
 
 
-#define MBIND(slotname, obj) ::usig::util::member_binder<decltype(slotname), slotname>(obj)
+#define USIG_MBIND(slotname, obj) ::usig::util::member_binder<decltype(slotname), slotname>(obj)
 } //namespace util
 
 

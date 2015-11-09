@@ -28,7 +28,7 @@ public:
 	slot<int> onFoo { std::bind(&B::_onFoo, this, pl::_1) };
 
 	/// or with member function matching the signal signatures.
-	slot<int> onZoom { MBIND(&B::_onZoom, this) };
+	slot<int> onZoom { USIG_MBIND(&B::_onZoom, this) };
 
 	B() {}
 
@@ -111,7 +111,6 @@ void threadTest() {
 		t.join();
 	}
 
-	ts.clear();
 }
 
 int main() {
