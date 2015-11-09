@@ -9,6 +9,7 @@
 #include <vector>
 #include <algorithm>
 #include <mutex>
+#include <iostream>
 
 namespace usig {
 
@@ -61,7 +62,7 @@ public:
 
 	slot(slot const&) = delete; ///< Cannot copy slot, must rebind.
 
-	~slot() { disconnect(); }
+	virtual ~slot() { disconnect(); }
 
 	/**
 	 * Call the slot action function. This is synchronized by the slot's mutex, meaning that the action function
@@ -127,11 +128,9 @@ public:
 	signal() {}
 	signal(signal& o) = delete;
 
-	~signal() {
+	virtual ~signal() {
 		for (slot_t * s : slots) {
-			if (s->connected_to(*this)) {
-				s->remove_signal(*this);
-			}
+			s->remove_signal(*this);
 		}
 	}
 

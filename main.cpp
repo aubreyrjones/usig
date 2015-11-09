@@ -91,14 +91,16 @@ void threadTest() {
 
 	for (int tid = 0; tid < 25; tid++) {
 		auto tfunc = [&freeSlot, tid] {
-			signal<int> s_Foo;
-			s_Foo.connect(freeSlot);
+			{
+				signal<int> s_Foo;
+				s_Foo.connect(freeSlot);
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-			for (int i = 0; i < 400; i++) {
-				s_Foo(tid);
-				std::this_thread::sleep_for(std::chrono::milliseconds(2));
+				for (int i = 0; i < 400; i++) {
+					s_Foo(tid);
+					std::this_thread::sleep_for(std::chrono::milliseconds(2));
+				}
 			}
 		};
 
