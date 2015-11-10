@@ -27,6 +27,7 @@
 #include <vector>
 #include <algorithm>
 #include <mutex>
+#include <iostream>
 
 namespace usig {
 
@@ -192,7 +193,7 @@ void connect(SLOT & slot, SIG & s) {
 };
 
 template <class SLOT, class SIG, class...SIGS>
-void connect(SLOT & slot, SIG sig, SIGS... sigs) {
+void connect(SLOT & slot, SIG & sig, SIGS& ... sigs) {
 	connect(slot, sig);
 	connect(slot, sigs...);
 };

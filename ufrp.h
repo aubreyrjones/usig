@@ -89,7 +89,6 @@ protected:
 	}
 
 	void _onUpdated() {
-		std::cout << "on updated" << std::endl;
 		Value<VAL_T>::_value = callUpdateFunction(typename gens<sizeof...(Args)>::type());
 	}
 
@@ -97,9 +96,10 @@ protected:
 public:
 	typedef std::function<VAL_T(Args...)> updateFunction_t;
 
+	usig::slot<> onUpdated { USIG_MBIND(&Expr::_onUpdated, this) };
+
 	std::tuple<std::shared_ptr<Value<Args>>...> args;
 	updateFunction_t updateFunction;
-	usig::slot<> onUpdated { USIG_MBIND(&Expr::_onUpdated, this) };
 
 	Expr() : args() {};
 	Expr(updateFunction_t f, std::shared_ptr<Value<Args>>..._args) : args(_args...), updateFunction(f) {
