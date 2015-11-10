@@ -20,7 +20,7 @@ struct B {
 public:
 
 	/// bind with lambda...
-	slot<int> onBar { [this](int a) { std::cout << "lambda: " << a << std::endl; } };
+	slot<int> onBar { [this](int a) { std::cout << this << " lambda: " << a << std::endl; } };
 
 	/// or with bind...
 	slot<int> onFoo { std::bind(&B::_onFoo, this, std::placeholders::_1) };
@@ -116,7 +116,7 @@ int main() {
 
 	basicTest();
 
-	threadTest();
+	//threadTest();
 
 
 	return 0;
