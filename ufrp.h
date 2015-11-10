@@ -70,22 +70,21 @@ VAL_T deref_value(std::shared_ptr<Value<VAL_T>> & v) {
 	return *v;
 }
 
-template<int ...>
-struct seq { };
-
-template<int N, int ...S>
-struct gens : gens<N-1, N-1, S...> { };
-
-template<int ...S>
-struct gens<0, S...> {
-	typedef seq<S...> type;
-};
-
-
-
 template <class VAL_T, class...Args>
 class Expr : public Value<VAL_T> {
 protected:
+
+	template<int ...>
+	struct seq { };
+
+	template<int N, int ...S>
+	struct gens : gens<N-1, N-1, S...> { };
+
+	template<int ...S>
+	struct gens<0, S...> {
+		typedef seq<S...> type;
+	};
+
 	template <int... S>
 	VAL_T callUpdateFunction(seq<S...>) {
 		return updateFunction(deref_value(std::get<S>(args))...);
