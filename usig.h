@@ -45,7 +45,7 @@ public:
 	friend class signal<Args...>;
 
 protected:
-	slot_function_t const _slot; ///< Action functor.
+	slot_function_t _slot; ///< Action functor.
 	std::vector<signal_t *> connected_signals {}; ///< Signal to which we've connected, if any.
 	std::mutex mutable _mutex {};
 
@@ -72,6 +72,11 @@ public:
 	slot(slot const&) = delete; ///< Cannot copy slot, must rebind.
 
 	virtual ~slot() { disconnect(); }
+
+	/// Rebind with a new action function.
+	void rebind(slot_function_t slot_function) {
+		_slot = slot_function;
+	}
 
 	/**
 	 * Call the slot action function. This is synchronized by the slot's mutex, meaning that the action function
@@ -180,6 +185,18 @@ public:
 		do_disconnect(s);
 	}
 };
+
+template <class SLOT, class SIG>
+void connect(SLOT & slot, SIG & s) {
+	s.connect(slot);
+};
+
+template <class SLOT, class SIG, class...SIGS>
+void connect(SLOT & slot, SIG sig, SIGS... sigs) {
+	connect(slot, sig);
+	connect(slot, sigs...);
+};
+
 
 
 namespace util {
