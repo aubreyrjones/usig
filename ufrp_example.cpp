@@ -24,5 +24,14 @@ int main(int, char**) {
 
 	std::cout << *xray << std::endl;
 
+	auto tango = makeexpr<int>([](int a, int b) -> int { return a + b; },
+							   xray, y);
+
+	std::cout << *tango << std::endl;
+
+	*y = *y * 2;
+
+	std::cout << *tango << std::endl;
+
 	return 0;
 }

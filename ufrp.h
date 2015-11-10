@@ -41,10 +41,13 @@ public:
 
 	usig::signal<> s_Updated; ///< Emitted after the value is updated.
 
-	Value& operator=(VAL_T const& newVal) {
+	void set(VAL_T const& newVal) {
 		_value = newVal;
 		s_Updated();
+	}
 
+	Value& operator=(VAL_T const& newVal) {
+		set(newVal);
 		return *this;
 	}
 
@@ -89,7 +92,7 @@ protected:
 	}
 
 	void _onUpdated() {
-		Value<VAL_T>::_value = callUpdateFunction(typename gens<sizeof...(Args)>::type());
+		Value<VAL_T>::set(callUpdateFunction(typename gens<sizeof...(Args)>::type()));
 	}
 
 
@@ -106,11 +109,13 @@ public:
 		usig::connect(onUpdated, update_signal(_args)...);
 		_onUpdated();
 	};
+
+	operator Value<VAL_T>& () { return *this; }
 };
 
 
 template <class VAL_T, typename MF, typename...Args>
-std::shared_ptr<Expr<VAL_T, Args...>> makeexpr(MF f, std::shared_ptr<Value<Args>>...args) {
+std::shared_ptr<Value<VAL_T>> makeexpr(MF f, std::shared_ptr<Value<Args>>...args) {
 	return std::make_shared<Expr<VAL_T, Args...>>(std::forward<MF>(f), std::forward<std::shared_ptr<Value<Args>>>(args)...);
 };
 
