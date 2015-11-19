@@ -15,6 +15,10 @@ int main(int, char**) {
 
 	*z = *x * *y;
 
+
+	// std::function<int()> bullseye = x + y + 17
+	// int beResult = bullseye()
+
 	auto xray = makeexpr<int>([](int a, int b, int c) -> int {return a * b * c; },
 					  x, y, z);
 
