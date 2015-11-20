@@ -2,27 +2,25 @@
 // Created by ARJ on 11/19/15.
 //
 
-#include "ufrp2.h"
+
 #include <iostream>
 
+#include "glm/glm/glm.hpp" // lots of glm's
+#include "glm/glm/gtx/string_cast.hpp"
+
+#include "ufrp2.h"
 using namespace ufrp;
+
+struct A {
+	value<float> foo = makeval(2.3f);
+	value<glm::vec3> bar = makeval(glm::vec3(1, 2, 3));
+};
 
 
 int main(int argc, char **argv){
+	A a;
 
-	auto a = makeval(6);
-	auto b = makeval(3.0);
+	auto baz = a.foo * a.bar;
 
-	auto diff = a - b;
-
-	std::cout << (*a) << std::endl;
-	std::cout << (*diff) << std::endl;
-
-	auto sum = diff + makeval(28);
-
-	std::cout << (*sum) << std::endl;
-
-	*a = 12;
-
-	std::cout << (*sum) << std::endl;
+	std::cout << glm::to_string(valof(baz)) << std::endl;
 }

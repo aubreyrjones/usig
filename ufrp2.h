@@ -6,10 +6,12 @@
 #define USIG_UFRP2_H
 
 #include <memory>
+#include "usig.h"
 
 namespace ufrp {
 
 using std::shared_ptr;
+using namespace usig;
 
 
 template <typename VAL_T, typename E>
@@ -46,20 +48,27 @@ protected:
 	VAL_T value;
 };
 
+
+
 template <typename VAL_T>
 shared_ptr<Expr<VAL_T, Value<VAL_T>>> makeval(VAL_T const& value) {
 	return std::make_shared<Value<VAL_T>>(value);
 }
 
+template <typename VAL_T>
+using value = shared_ptr<Expr<VAL_T, Value<VAL_T>>>;
 
+
+
+// === expressions ===
 template <typename V1, typename V2, typename E1, typename E2>
 struct Difference : Expr<decltype(V1() - V2()), Difference<V1, V2, E1, E2>> {
 public:
 	typedef decltype(V1() - V2()) value_type;
 
-	Difference(shared_ptr<Expr<V1, E1>> e1, shared_ptr<Expr<V2, E2>> e2) : e1(e1), e2(e2) {}
+	Difference(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) : e1(e1), e2(e2) {}
 
-	value_type operator()() const { return (*e1) - (*e2); }
+	value_type operator()() const { return (*e1)() - (*e2)(); }
 
 	operator value_type() const { return (*this)(); }
 
@@ -73,9 +82,9 @@ struct Sum : Expr<decltype(V1() + V2()), Sum<V1, V2, E1, E2>> {
 public:
 	typedef decltype(V1() + V2()) value_type;
 
-	Sum(shared_ptr<Expr<V1, E1>> e1, shared_ptr<Expr<V2, E2>> e2) : e1(e1), e2(e2) {}
+	Sum(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) : e1(e1), e2(e2) {}
 
-	value_type operator()() const { return (*e1) + (*e2); }
+	value_type operator()() const { return (*e1)() + (*e2)(); }
 
 	operator value_type() const { return (*this)(); }
 
@@ -89,9 +98,9 @@ struct Product : Expr<decltype(V1() * V2()), Product<V1, V2, E1, E2>> {
 public:
 	typedef decltype(V1() * V2()) value_type;
 
-	Product(shared_ptr<Expr<V1, E1>> e1, shared_ptr<Expr<V2, E2>> e2) : e1(e1), e2(e2) {}
+	Product(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) : e1(e1), e2(e2) {}
 
-	value_type operator()() const { return (*e1) * (*e2); }
+	value_type operator()() const { return (*e1)() * (*e2)(); }
 
 	operator value_type() const { return (*this)(); }
 
@@ -105,9 +114,9 @@ struct Quotient : Expr<decltype(V1() / V2()), Quotient<V1, V2, E1, E2>> {
 public:
 	typedef decltype(V1() / V2()) value_type;
 
-	Quotient(shared_ptr<Expr<V1, E1>> e1, shared_ptr<Expr<V2, E2>> e2) : e1(e1), e2(e2) {}
+	Quotient(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) : e1(e1), e2(e2) {}
 
-	value_type operator()() const { return (*e1) / (*e2); }
+	value_type operator()() const { return (*e1)() / (*e2)(); }
 
 	operator value_type() const { return (*this)(); }
 
@@ -117,27 +126,59 @@ protected:
 };
 
 
+// === function ===
+template <typename VAL_T>
+struct Function : Expr<VAL_T, Function<VAL_T>> {
+	Function(std::function<VAL_T()> f) : f(f) {}
 
+	VAL_T operator()() const { return f(); }
+
+	operator VAL_T() const { return (*this)(); }
+
+protected:
+	std::function<VAL_T()> f;
+};
+
+template <typename VAL_T>
+using fun = shared_ptr<Expr<VAL_T, Function<VAL_T>>>;
+
+template <typename VAL_T, typename MF>
+shared_ptr<Expr<VAL_T, Function<VAL_T>>> makefun(MF f) {
+	return std::make_shared<Function<VAL_T>>(std::function<VAL_T()>(std::forward<MF>(f)));
+}
+
+
+// === expression operators ===
 template <typename V1, typename V2, typename E1, typename E2>
-shared_ptr<Expr<typename Difference<V1, V2, E1, E2>::value_type, Difference<V1, V2, E1, E2>>> operator-(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) {
+shared_ptr<Expr<typename Difference<V1, V2, E1, E2>::value_type, Difference<V1, V2, E1, E2>>>
+operator-(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) {
 	return std::make_shared<Difference<V1, V2, E1, E2>>(e1, e2);
 };
 
 template <typename V1, typename V2, typename E1, typename E2>
-shared_ptr<Expr<typename Sum<V1, V2, E1, E2>::value_type, Sum<V1, V2, E1, E2>>> operator+(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) {
+shared_ptr<Expr<typename Sum<V1, V2, E1, E2>::value_type, Sum<V1, V2, E1, E2>>>
+operator+(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) {
 	return std::make_shared<Sum<V1, V2, E1, E2>>(e1, e2);
 };
 
 template <typename V1, typename V2, typename E1, typename E2>
-shared_ptr<Expr<typename Product<V1, V2, E1, E2>::value_type, Product<V1, V2, E1, E2>>> operator*(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) {
+shared_ptr<Expr<typename Product<V1, V2, E1, E2>::value_type, Product<V1, V2, E1, E2>>>
+operator*(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) {
 	return std::make_shared<Product<V1, V2, E1, E2>>(e1, e2);
 };
 
 template <typename V1, typename V2, typename E1, typename E2>
-shared_ptr<Expr<typename Quotient<V1, V2, E1, E2>::value_type, Quotient<V1, V2, E1, E2>>> operator/(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) {
+shared_ptr<Expr<typename Quotient<V1, V2, E1, E2>::value_type, Quotient<V1, V2, E1, E2>>>
+operator/(shared_ptr<Expr<V1, E1>> const& e1, shared_ptr<Expr<V2, E2>> const& e2) {
 	return std::make_shared<Quotient<V1, V2, E1, E2>>(e1, e2);
 };
 
+
+// === functions ===
+template <typename VAL_T, typename E>
+VAL_T valof(shared_ptr<Expr<VAL_T, E>> const& e) {
+	return (*e)();
+};
 
 }
 

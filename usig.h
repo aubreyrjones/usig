@@ -67,6 +67,9 @@ protected:
 
 public:
 
+	/// forward to an identical signal
+	slot(signal_t & s) : _slot([&s] {s();}) { };
+
 	/// Construct a slot. The given function will be called when a connected signal is emitted.
 	slot(slot_function_t slot_function) : _slot(slot_function) {}
 
@@ -218,7 +221,11 @@ private:
 	CLASS *obj;
 };
 
-#define USIG_MBIND(slotname, obj) ::usig::util::member_binder<decltype(slotname), slotname>(obj)
+/// Bind a member function of an object.
+#define USIG_MBIND_O(slotname, obj) ::usig::util::member_binder<decltype(slotname), slotname>(obj)
+
+/// Bind a member function of `this`.
+#define USIG_MBIND(slotname) ::usig::util::member_binder<decltype(slotname), slotname>(this)
 } //namespace util
 
 
