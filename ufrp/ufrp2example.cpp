@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-#include "glm/glm/glm.hpp" // lots of glm's
-#include "glm/glm/gtx/string_cast.hpp"
+#include "../glm/glm/glm.hpp" // lots of glm's
+#include "../glm/glm/gtx/string_cast.hpp"
 
 #include "ufrp2.h"
 using namespace ufrp;

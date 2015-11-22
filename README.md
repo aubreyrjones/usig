@@ -4,7 +4,7 @@ usig
 usig is a tiny, header-only C++11 signals/slots implementation. It depends only on the C++11 standard library.
 
 Note: in the long tradition of using 'u' to represent 'µ', the correct pronunciation of the project's name is "mew sig". 
-Still, don't be a dick just 'cause somebody says 'yoo sig'.
+Still, don't be a dick just 'cause somebody says "yoo sig".
 
 
 Building usig
