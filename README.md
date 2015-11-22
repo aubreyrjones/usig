@@ -52,7 +52,7 @@ Usage
         SignalOwningStruct sig;
         SlotOwningStruct slt;
         
-        usig::connect(slt, sig);
+        usig::connect(slt.onSomeSignal, sig.s_SomeSignal);
         
         sig.s_SomeSignal(23);
     }
