@@ -98,7 +98,7 @@ protected:
 public:
 	typedef std::function<VAL_T(Args...)> updateFunction_t;
 
-	usig::slot<> onUpdated { USIG_MBIND(&Expr::_onUpdated, this) };
+	usig::slot<> onUpdated { USIG_MBIND(&Expr::_onUpdated) };
 
 	std::tuple<std::shared_ptr<Value<Args>>...> args;
 	updateFunction_t updateFunction;

@@ -37,7 +37,10 @@ template<class... Args>
 class signal;
 
 
-/** A slot is called when a signal is emitted. */
+/**
+ * A slot manages the lifecycle of a connection to signals, executing some action function when connected signals are
+ * emitted.
+ * */
 template <class... Args>
 class slot {
 public:
@@ -52,7 +55,6 @@ protected:
 
 	void add_signal(signal_t & s) {
 		lockg _lock(_mutex);
-
 		connected_signals.push_back(&s);
 	}
 
@@ -66,9 +68,6 @@ protected:
 	}
 
 public:
-
-	/// forward to an identical signal
-	slot(signal_t & s) : _slot([&s] {s();}) { };
 
 	/// Construct a slot. The given function will be called when a connected signal is emitted.
 	slot(slot_function_t slot_function) : _slot(slot_function) {}
@@ -117,7 +116,7 @@ public:
 	}
 };
 
-/** A synchronous signal. Calls all connected slots.*/
+/** A synchronous signal. Calls all connected slots. */
 template <class... Args>
 class signal {
 public:
@@ -190,18 +189,18 @@ public:
 	}
 };
 
+/** Connect the signal to the slot. */
 template <class SLOT, class SIG>
 void connect(SLOT & slot, SIG & s) {
 	s.connect(slot);
 };
 
+/** Connect all given signals to the slot. */
 template <class SLOT, class SIG, class...SIGS>
 void connect(SLOT & slot, SIG & sig, SIGS& ... sigs) {
 	connect(slot, sig);
 	connect(slot, sigs...);
 };
-
-
 
 namespace util {
 template<typename FUNC, FUNC MemFun>
@@ -225,14 +224,8 @@ private:
 #define USIG_MBIND_O(slotname, obj) ::usig::util::member_binder<decltype(slotname), slotname>(obj)
 
 /// Bind a member function of `this`.
-#define USIG_MBIND(slotname) ::usig::util::member_binder<decltype(slotname), slotname>(this)
+#define USIG_MBIND(slotname) USIG_MBIND_O(slotname, this)
 } //namespace util
-
-
-//template <typename F, F func, class C>
-//auto mbind(C * obj) -> decltype(util::member_binder<F, func>(obj)) {
-//	return util::member_binder<F, func>(obj);
-//};
 
 } //namespace usig
 

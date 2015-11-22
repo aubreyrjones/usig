@@ -66,7 +66,8 @@ struct BinaryExpr : public Expr<R> {
 	BinaryExpr(expr<V1> const& e1, expr<V2> const& e2) :
 			Expr<R>(),
 			e1(e1),
-			e2(e2)
+			e2(e2),
+			onPredUpdate([this] { this->s_Updated(); })
 	{
 		e1->s_Updated.connect(onPredUpdate);
 		e2->s_Updated.connect(onPredUpdate);
@@ -78,7 +79,7 @@ protected:
 	expr<V1> e1;
 	expr<V2> e2;
 
-	slot<> onPredUpdate {this->s_Updated};
+	slot<> onPredUpdate;
 };
 
 
