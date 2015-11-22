@@ -1,7 +1,10 @@
 usig
 ====
 
-usig is a tiny, header-only C++11 signals/slots implementation. It depends only on the C++11 standard library.
+usig is a tiny, header-only C++11 signals/slots implementation. It depends only on the C++ standard library.
+
+usig is licensed under the MIT License, making it compatible for inclusion with both closed- and open-source work. You
+are encouraged to give back what you can.
 
 Note: in the long tradition of using 'u' to represent 'µ', the correct pronunciation of the project's name is "mew sig". 
 Still, don't be a dick just 'cause somebody says "yoo sig".
