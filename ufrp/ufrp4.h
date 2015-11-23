@@ -40,9 +40,34 @@ struct Expr : Value<V> {
 
 // =========== unary expressions ===========
 
+template <typename E>
+struct PointerToExpr : public Expr<typename E::value_type, PointerToExpr<E>> {
+	typedef typename E::value_type value_type;
+
+	value_type operator()() const { return (*_e)(); }
+
+	PointerToExpr(std::shared_ptr<E> e) : _e(e) {}
+	PointerToExpr() : _e() {}
+
+	std::shared_ptr<E> get() { return _e; }
+
+	operator E&() { return static_cast<E&>(*_e); }
+	operator E const&() { return static_cast<E const&>(*_e); }
+
+	PointerToExpr& operator=(typename E::value_type const& v) {
+		*_e = v;
+		return *this;
+	}
+
+private:
+	std::shared_ptr<E> _e;
+};
+
+
 template <typename V>
 struct VarExpr : public Expr<V, VarExpr<V>> {
 	typedef V value_type;
+	typedef PointerToExpr<VarExpr<V>> shared;
 
 	value_type operator()() const { return _value; }
 
@@ -54,6 +79,11 @@ struct VarExpr : public Expr<V, VarExpr<V>> {
 		this->s_Updated();
 
 		return *this;
+	}
+
+	template <class...Args>
+	static shared make_shared(Args...args) {
+		return PointerToExpr<VarExpr<V>>(std::make_shared<VarExpr<V>>(std::forward<Args>(args)...));
 	}
 
 private:
@@ -81,19 +111,6 @@ private:
 	E1 _e1;
 };
 
-template <typename E>
-struct PointerToExpr : public Expr<typename E::value_type, PointerToExpr<E>> {
-	typedef typename E::value_type value_type;
-
-	value_type operator()() const { return (*_e)(); }
-
-	PointerToExpr(std::shared_ptr<E> e) : _e(e) {}
-
-	std::shared_ptr<E> get() { return _e; }
-
-private:
-	std::shared_ptr<E> _e;
-};
 
 
 // =========== binary expressions ===========
@@ -101,7 +118,6 @@ private:
 template <typename R, typename E1, typename E2, typename E>
 struct BinExpr {
 	BinExpr(E1 const& e1, E2 const& e2) : _e1(e1), _e2(e2) {
-
 	}
 
 	BinExpr(BinExpr const& o) : BinExpr(o._e1, o._e2) {}
@@ -125,6 +141,7 @@ struct Sum : public Expr<decltype(typename E1::value_type() + typename E2::value
 
 	using BinExpr<value_type, E1, E2, Sum<E1, E2>>::BinExpr;
 };
+
 
 
 // =========== operator functions ===========
