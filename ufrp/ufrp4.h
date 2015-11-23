@@ -53,10 +53,10 @@ struct PointerToExpr : public Expr<typename E::value_type, PointerToExpr<E>> {
 	value_type operator()() const { return (*_e)(); }
 
 	PointerToExpr(std::shared_ptr<E> e) : _e(e) {
-		usig::connect(this->onPredUpdated, e->s_Updated);
+		usig::connect(this->onPredUpdated, _e->s_Updated);
 	}
-	PointerToExpr() : _e() {}
-	PointerToExpr(PointerToExpr const& o) : _e(o._e) {}
+
+	PointerToExpr(PointerToExpr const& o) : PointerToExpr(o._e) {}
 
 	std::shared_ptr<E> get() { return _e; }
 
@@ -109,21 +109,70 @@ struct ConstExpr : public Expr<V, ConstExpr<V, _value>> {
 };
 
 
-template <typename E1>
-struct NegateExpr : public Expr<typename E1::value_type, NegateExpr<E1>> {
-	typedef typename E1::value_type value_type;
+template <template <typename V> class OP, typename E>
+struct UnaryOpExpr : public Expr<typename OP<typename E::value_type>::result_type, UnaryOpExpr<OP, E>> {
+	typedef typename OP<typename E::value_type>::result_type value_type;
 
-	value_type operator()() const { return -(_e1()); }
+	value_type operator()() const {
+		return OP<typename E::value_type>()(this->_e());
+	}
 
-	NegateExpr(E1 const& e1) : _e1(e1) {}
+	UnaryOpExpr(E const& e) : _e(e) {
+		usig::connect(this->onPredUpdated, _e.s_Updated);
+	}
+
+	UnaryOpExpr(UnaryOpExpr const& o) : UnaryOpExpr(o._e) {}
 
 private:
-	E1 _e1;
+	E _e;
 };
 
 
-
 // =========== binary expressions ===========
+
+template <template <typename V1, typename V2> class OP, typename E1, typename E2>
+struct BinOpExpr : public Expr<typename OP<typename E1::value_type, typename E2::value_type>::result_type, BinOpExpr<OP, E1, E2>> {
+	typedef typename OP<typename E1::value_type, typename E2::value_type>::result_type value_type;
+
+	value_type operator()() const {
+		return OP<typename E1::value_type, typename E2::value_type>()(this->_e1(), this->_e2());
+	}
+
+	BinOpExpr(E1 const& e1, E2 const& e2) : _e1(e1), _e2(e2) {
+		usig::connect(this->onPredUpdated, _e1.s_Updated, _e2.s_Updated);
+	}
+
+	BinOpExpr(BinOpExpr const& o) : BinOpExpr(o._e1, o._e2) {}
+
+private:
+	E1 _e1;
+	E2 _e2;
+};
+
+// =========== utility functions ==========
+template <typename E>
+struct expr_for {
+	typedef Expr<typename E::value_type, E> type;
+};
+
+
+// =========== operator functions ===========
+template <typename V>
+struct negate {
+	typedef decltype(-V()) result_type;
+
+	result_type operator()(V const& v) {
+		return -v;
+	}
+};
+
+template <typename E>
+UnaryOpExpr<negate, E>
+operator-(E const& e) {
+	return UnaryOpExpr<negate, E>(e);
+};
+
+// binary operators
 
 template <typename V1, typename V2>
 struct add {
@@ -161,26 +210,6 @@ struct divide {
 	}
 };
 
-template <template <typename V1, typename V2> class OP, typename E1, typename E2>
-struct BinOpExpr : public Expr<typename OP<typename E1::value_type, typename E2::value_type>::result_type, BinOpExpr<OP, E1, E2>> {
-	typedef typename OP<typename E1::value_type, typename E2::value_type>::result_type value_type;
-
-	value_type operator()() const {
-		return OP<typename E1::value_type, typename E2::value_type>()(this->_e1(), this->_e2());
-	}
-
-	BinOpExpr(E1 const& e1, E2 const& e2) : _e1(e1), _e2(e2) {
-		usig::connect(this->onPredUpdated, _e1.s_Updated, _e2.s_Updated);
-	}
-
-private:
-	E1 _e1;
-	E2 _e2;
-};
-
-
-// =========== operator functions ===========
-
 template <typename E1, typename E2>
 BinOpExpr<add, E1, E2>
 operator+(E1 const& e1, E2 const& e2) {
@@ -205,30 +234,10 @@ operator/(E1 const& e1, E2 const& e2) {
 	return BinOpExpr<divide, E1, E2>(e1, e2);
 };
 
+
 // ======== pointer functions =========
-
-template <typename E>
-struct expr_for {
-	typedef Expr<typename E::value_type, E> type;
-};
-
-
 template <typename V>
 using shared_value = std::shared_ptr<Value<V>>;
-
-template <typename E>
-using SharedExpr = PointerToExpr<E>;
-
-template <typename E1>
-typename expr_for<NegateExpr<E1>>::type
-operator-(E1 const& e1) {
-	return NegateExpr<E1>(e1);
-};
-
-template <typename E>
-struct expr_ptr_for {
-	typedef PointerToExpr<E> type;
-};
 
 template <typename E>
 PointerToExpr<E> expr_ptr(std::shared_ptr<E> const& e) {
@@ -236,7 +245,7 @@ PointerToExpr<E> expr_ptr(std::shared_ptr<E> const& e) {
 }
 
 template <typename E>
-std::shared_ptr<E> shared_expr(E const& e) {
+std::shared_ptr<E> make_shared_expr(E const& e) {
 	return std::shared_ptr<E>(new E(e));
 }
 

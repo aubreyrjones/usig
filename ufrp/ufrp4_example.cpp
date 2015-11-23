@@ -12,14 +12,14 @@ using namespace std;
 struct B {
 	ConstExpr<int, 2> a {};
 	ConstExpr<int, 5> b {};
-	VarExpr<int>::shared c {28};
+	VarExpr<int>::shared c {3};
 };
 
 struct A {
 	shared_value<int> v;
 
 	A(B & b) {
-		v = shared_expr(b.a + b.b + b.c);
+		v = make_shared_expr(b.a * -b.b + b.c);
 	}
 };
 
@@ -27,7 +27,7 @@ struct C {
 	shared_value<int> v;
 
 	C(A & a) {
-		v = shared_expr(expr_ptr(a.v) + ConstExpr<int, 298>());
+		v = make_shared_expr(expr_ptr(a.v) + ConstExpr<int, 298>());
 	}
 };
 
@@ -44,6 +44,10 @@ int main() {
 
 	cout << *c.v << endl;
 
+	usig::slot<> slot { [] {cout << "updated" << endl;} };
+	usig::connect(slot, c.v->s_Updated);
+
+	b.c = 90001;
 
 	return 0;
 }
