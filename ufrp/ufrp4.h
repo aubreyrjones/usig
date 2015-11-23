@@ -5,70 +5,138 @@
 #ifndef USIG_UFRP4_H
 #define USIG_UFRP4_H
 
+#include <memory>
+
 namespace ufrp {
 
 template <typename V, typename E>
 struct Expr {
+	typedef E expr_type;
 	typedef V value_type;
 
 	value_type operator()() const { return static_cast<E const&>(*this)(); }
 
-	//operator value_type() { return (*this)(); }
+	operator value_type() { return (*this)(); }
 };
+
+// =========== unary expressions ===========
 
 template <typename V, V _value>
 struct ConstExpr : public Expr<V, ConstExpr<V, _value>> {
 	typedef V value_type;
 
-	V operator()() const { return _value; }
+	value_type operator()() const { return _value; }
 };
 
+template <typename E1>
+struct NegateExpr : public Expr<typename E1::value_type, NegateExpr<E1>> {
+	typedef typename E1::value_type value_type;
 
-template <typename V1, typename E1>
-struct NegateExpr : public Expr<V1, NegateExpr<V1, E1>> {
-	typedef V1 value_type;
-
-	V1 operator()() const { return -(_e1()); }
+	value_type operator()() const { return -(_e1()); }
 
 	NegateExpr(E1 const& e1) : _e1(e1) {}
-
 private:
 	E1 _e1;
+};
+
+template <typename E>
+struct PointerToExpr : public Expr<typename E::value_type, PointerToExpr<E>> {
+	typedef typename E::value_type value_type;
+
+	value_type operator()() const { return (*_e)(); }
+
+	PointerToExpr(std::shared_ptr<E> e) : _e(e) {}
+private:
+	std::shared_ptr<E> _e;
+};
+
+// =========== binary expressions ===========
+
+template <typename E1, typename E2>
+struct BinExpr {
+	BinExpr(E1 const& e1, E2 const& e2) : _e1(e1), _e2(e2) {}
+protected:
+	E1 _e1;
+	E2 _e2;
 };
 
 
 template <typename E1, typename E2>
-struct Sum : Expr<decltype((typename E1::value_type()) + (typename E2::value_type())), Sum<E1, E2>> {
-	typedef decltype((typename E1::value_type()) + (typename E2::value_type())) value_type;
+struct Sum : public Expr<decltype(typename E1::value_type() + typename E2::value_type()), Sum<E1, E2>>, public BinExpr<E1, E2> {
+	typedef decltype(typename E1::value_type() + typename E2::value_type()) value_type;
 
-	value_type operator()() const { return _e1() + _e2(); }
+	value_type operator()() const { return this->_e1() + this->_e2(); }
 
-	Sum(E1 const& e1, E2 const& e2) : _e1(e1), _e2(e2) {}
-
-private:
-	E1 _e1;
-	E2 _e2;
+	using BinExpr<E1, E2>::BinExpr;
 };
+
+
+// =========== operator functions ===========
 
 template <typename E>
 struct expr_for {
 	typedef Expr<typename E::value_type, E> type;
 };
 
+template <typename E>
+PointerToExpr<E>
+vp(std::shared_ptr<E> pe) {
+	return PointerToExpr<E>(pe);
+}
+
+
+
 template <typename E1>
-typename expr_for<NegateExpr<typename E1::value_type, typename expr_for<E1>::type>>::type
+typename expr_for<NegateExpr<E1>>::type
 operator-(E1 const& e1) {
-	return NegateExpr<typename E1::value_type, typename expr_for<E1>::type>(e1);
+	return NegateExpr<E1>(e1);
 };
 
 
 template <typename E1, typename E2>
-
 typename expr_for<Sum<typename expr_for<E1>::type, typename expr_for<E2>::type>>::type
-operator+(E1 const& e1, E2 const& e2) {
+operator+(Expr<typename E1::value_type, E1> const& e1, Expr<typename E2::value_type, E2> const& e2) {
 	return Sum<typename expr_for<E1>::type, typename expr_for<E2>::type>(e1, e2);
+};
+
+template <typename E1, typename E2>
+typename expr_for<
+		Sum<typename expr_for<E1>::type, PointerToExpr<E2>>>::type
+operator+(Expr<typename E1::value_type, E1> const& e1, std::shared_ptr<E2> & e2) {
+	return Sum<typename expr_for<E1>::type, PointerToExpr<E2>>(e1, vp(e2));
+};
+
+template <typename E1, typename E2>
+typename expr_for<Sum<PointerToExpr<E1>, typename expr_for<E2>::type>>::type
+operator+(std::shared_ptr<E1> e1, Expr<typename E2::value_type, E2> const& e2) {
+	return Sum<PointerToExpr<E1>, typename expr_for<E2>::type>(vp(e1), e2);
 };
 
 }
 
 #endif //USIG_UFRP4_H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
