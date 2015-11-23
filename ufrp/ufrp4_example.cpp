@@ -9,19 +9,22 @@
 using namespace ufrp;
 using namespace std;
 
+struct A {
+	expr_ptr_for<VarExpr<int>>::type e;
+
+	A() : e(makeexpr<VarExpr<int>>(6)) {}
+};
 
 int main() {
-	ConstExpr<int, 6> c;
-	ConstExpr<int, 28> o;
-//
-	auto e2 = -c;
-	auto e3 = -e2 + e2 + o;
 
-	cout << e3() << endl;
+	ConstExpr<int, 112> c;
 
-	auto c2 = expr_ptr<ConstExpr<int, 203>>();
+	VarExpr<int> v2(2);
+	VarExpr<int> v(1);
+	VarExpr<int> v3(268);
 
-	auto e4 = c2 + c + c2;
+	auto v4 = v;
 
-	cout << e4() << endl;
+	cout << v2 + v4 + v3 + c << endl;
+
 }
