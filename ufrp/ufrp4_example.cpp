@@ -12,7 +12,7 @@ using namespace std;
 struct B {
 	ConstExpr<int, 2> a {};
 	ConstExpr<int, 5> b {};
-	VarExpr<int>::shared c = VarExpr<int>::make_shared(28);
+	VarExpr<int>::shared c {28};
 };
 
 struct A {
