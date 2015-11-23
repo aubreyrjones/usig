@@ -79,9 +79,13 @@ struct expr_for {
 };
 
 template <typename E>
-PointerToExpr<E>
-vp(std::shared_ptr<E> pe) {
-	return PointerToExpr<E>(pe);
+PointerToExpr<E> expr_ptr(E const& e) {
+	return PointerToExpr<E>(std::make_shared<E>(e));
+}
+
+template <typename E>
+PointerToExpr<E> expr_ptr() {
+	return PointerToExpr<E>(std::make_shared<E>());
 }
 
 
@@ -97,19 +101,6 @@ template <typename E1, typename E2>
 typename expr_for<Sum<typename expr_for<E1>::type, typename expr_for<E2>::type>>::type
 operator+(Expr<typename E1::value_type, E1> const& e1, Expr<typename E2::value_type, E2> const& e2) {
 	return Sum<typename expr_for<E1>::type, typename expr_for<E2>::type>(e1, e2);
-};
-
-template <typename E1, typename E2>
-typename expr_for<
-		Sum<typename expr_for<E1>::type, PointerToExpr<E2>>>::type
-operator+(Expr<typename E1::value_type, E1> const& e1, std::shared_ptr<E2> & e2) {
-	return Sum<typename expr_for<E1>::type, PointerToExpr<E2>>(e1, vp(e2));
-};
-
-template <typename E1, typename E2>
-typename expr_for<Sum<PointerToExpr<E1>, typename expr_for<E2>::type>>::type
-operator+(std::shared_ptr<E1> e1, Expr<typename E2::value_type, E2> const& e2) {
-	return Sum<PointerToExpr<E1>, typename expr_for<E2>::type>(vp(e1), e2);
 };
 
 }

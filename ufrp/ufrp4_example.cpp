@@ -16,10 +16,10 @@ int main() {
 //
 	auto e2 = -c;
 	auto e3 = -e2 + e2 + o;
-//
+
 	cout << e3() << endl;
-//
-	auto c2 = make_shared<ConstExpr<int, 203>>();
+
+	auto c2 = expr_ptr<ConstExpr<int, 203>>();
 
 	auto e4 = c2 + c + c2;
 
