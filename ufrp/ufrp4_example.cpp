@@ -10,9 +10,8 @@ using namespace ufrp;
 using namespace std;
 
 struct A {
-	expr_ptr_for<VarExpr<int>>::type e;
 
-	A() : e(makeexpr<VarExpr<int>>(6)) {}
+
 };
 
 int main() {
