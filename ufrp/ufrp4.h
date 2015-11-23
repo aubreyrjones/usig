@@ -6,13 +6,28 @@
 #define USIG_UFRP4_H
 
 #include <memory>
+#include <usig.h>
 #include <iostream>
 
 namespace ufrp {
 
-template <typename V, typename E>
-struct Expr {
+template <typename V>
+struct Value {
 	typedef V value_type;
+
+	virtual value_type value() { return V(); }
+
+	value_type operator()() { return value(); }
+	operator value_type() { return value(); }
+
+	usig::signal<> s_Updated;
+};
+
+template <typename V, typename E>
+struct Expr : Value<V> {
+	typedef V value_type;
+
+	value_type value() override { return (*this)(); }
 
 	value_type operator()() const { return static_cast<E const&>(*this)(); }
 
@@ -36,6 +51,7 @@ struct VarExpr : public Expr<V, VarExpr<V>> {
 
 	VarExpr& operator=(value_type const& v) {
 		_value = v;
+		this->s_Updated();
 	}
 
 private:
@@ -58,6 +74,7 @@ struct NegateExpr : public Expr<typename E1::value_type, NegateExpr<E1>> {
 	value_type operator()() const { return -(_e1()); }
 
 	NegateExpr(E1 const& e1) : _e1(e1) {}
+
 private:
 	E1 _e1;
 };
@@ -69,6 +86,7 @@ struct PointerToExpr : public Expr<typename E::value_type, PointerToExpr<E>> {
 	value_type operator()() const { return (*_e)(); }
 
 	PointerToExpr(std::shared_ptr<E> e) : _e(e) {}
+
 private:
 	std::shared_ptr<E> _e;
 };
@@ -78,7 +96,11 @@ private:
 
 template <typename E1, typename E2>
 struct BinExpr {
-	BinExpr(E1 const& e1, E2 const& e2) : _e1(e1), _e2(e2) {}
+	BinExpr(E1 const& e1, E2 const& e2) : _e1(e1), _e2(e2) {
+		
+	}
+
+	BinExpr(BinExpr const& o) : BinExpr(o._e1, o._e2) {}
 
 protected:
 	E1 _e1;
@@ -110,10 +132,19 @@ struct expr_ptr_for {
 	typedef PointerToExpr<E> type;
 };
 
-template <typename E, typename...Args>
-PointerToExpr<E> makeexpr(Args ... args) {
-	return PointerToExpr<E>(std::make_shared<E>(std::forward<Args>(args)...));
+template <typename E>
+PointerToExpr<E> make_expr(std::shared_ptr<E> const& e) {
+	return PointerToExpr<E>(e);
 }
+
+template <typename E>
+std::shared_ptr<E> shared_expr(E const& e) {
+	return std::shared_ptr<E>(new E(e));
+}
+
+template <typename V>
+using shared_value = std::shared_ptr<Value<V>>;
+
 
 
 template <typename E1>

@@ -9,21 +9,23 @@
 using namespace ufrp;
 using namespace std;
 
-struct A {
-
+struct B {
+	ConstExpr<int, 2> a {};
+	ConstExpr<int, 5> b {};
 
 };
 
+struct A {
+	shared_value<int> v;
+
+	A(B & b) {
+		v = shared_expr(b.a + b.b);
+	}
+};
+
 int main() {
+	B b;
+	A a(b);
 
-	ConstExpr<int, 112> c;
-
-	VarExpr<int> v2(2);
-	VarExpr<int> v(1);
-	VarExpr<int> v3(268);
-
-	auto v4 = v;
-
-	cout << v2 + v4 + v3 + c << endl;
-
+	cout << *a.v << endl;
 }
