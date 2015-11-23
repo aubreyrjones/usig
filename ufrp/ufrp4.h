@@ -77,8 +77,8 @@ struct VarExpr : public Expr<V, VarExpr<V>> {
 
 	value_type operator()() const { return _value; }
 
-	VarExpr() : _value() {}
-	VarExpr(value_type const& v) : _value(v) {  }
+	template <typename...Args>
+	VarExpr(Args...args) : _value(std::forward<Args>(args)...) {}
 
 	VarExpr& operator=(value_type const& v) {
 		_value = v;
@@ -89,6 +89,9 @@ struct VarExpr : public Expr<V, VarExpr<V>> {
 
 	struct shared : public PointerToExpr<VarExpr<V>> {
 		shared(V const& v) : PointerToExpr<VarExpr<V>>(std::make_shared<VarExpr<V>>(v)) { }
+
+		template <typename...Args>
+		shared(Args...args) : PointerToExpr<VarExpr<V>>(std::make_shared<VarExpr<V>>(std::forward<Args>(args)...)) { }
 
 		shared& operator=(V const& v) {
 			*this->_e = v;
@@ -101,11 +104,17 @@ private:
 };
 
 
-template <typename V, V _value>
-struct ConstExpr : public Expr<V, ConstExpr<V, _value>> {
+template <typename V>
+struct ConstExpr : public Expr<V, ConstExpr<V>> {
 	typedef V value_type;
 
 	value_type operator()() const { return _value; }
+
+	template <typename...Args>
+	ConstExpr(Args...args) : _value(std::forward<Args>(args)...) {}
+
+private:
+	V const _value;
 };
 
 
@@ -249,6 +258,15 @@ std::shared_ptr<E> make_shared_expr(E const& e) {
 	return std::shared_ptr<E>(new E(e));
 }
 
+template <typename V>
+ConstExpr<V> constant(V const& v) {
+	return ConstExpr<V>(v);
+}
+
+template <typename V, typename...Args>
+ConstExpr<V> constant(Args...args) {
+	return ConstExpr<V>(std::forward<Args>(args)...);
+};
 
 }
 

@@ -3,51 +3,36 @@
 //
 
 #include "ufrp4.h"
+#include "../glm/glm/glm.hpp" // lots of glm's
+#include "../glm/glm/gtx/string_cast.hpp"
+
 #include <iostream>
 #include <memory>
 
 using namespace ufrp;
 using namespace std;
 
-struct B {
-	ConstExpr<int, 2> a {};
-	ConstExpr<int, 5> b {};
-	VarExpr<int>::shared c {3};
+struct Child {
+	VarExpr<glm::vec2>::shared bounds {32.0f, 32.0f};
+	VarExpr<int>::shared zDepth {12};
 };
 
-struct A {
-	shared_value<int> v;
+struct Parent {
+	shared_value<glm::vec2> bounds;
+	shared_value<int> zDepth;
 
-	A(B & b) {
-		v = make_shared_expr(b.a * -b.b + b.c);
-	}
-};
-
-struct C {
-	shared_value<int> v;
-
-	C(A & a) {
-		v = make_shared_expr(expr_ptr(a.v) + ConstExpr<int, 298>());
+	Parent(Child & c) {
+		bounds = make_shared_expr(c.bounds + constant<glm::vec2>(2, 2));
+		zDepth = make_shared_expr(c.zDepth + constant(6));
 	}
 };
 
 int main() {
-	B b;
-	A a(b);
-	C c(a);
+	Child c;
+	Parent p(c);
 
-	cout << *a.v << endl;
-
-	cout << *c.v << endl;
-
-	b.c = 408;
-
-	cout << *c.v << endl;
-
-	usig::slot<> slot { [] {cout << "updated" << endl;} };
-	usig::connect(slot, c.v->s_Updated);
-
-	b.c = 90001;
+	cout << glm::to_string((*p.bounds)()) << endl;
+	cout << *p.zDepth << endl;
 
 	return 0;
 }
